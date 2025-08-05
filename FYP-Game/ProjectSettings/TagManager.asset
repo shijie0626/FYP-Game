@@ -38,6 +38,12 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Wall & Floor
+    uniqueID: 2487762665
+    locked: 0
+  - name: Stair
+    uniqueID: 946595707
+    locked: 0
   - name: BG
     uniqueID: 1348333845
     locked: 0
@@ -50,6 +56,6 @@ TagManager:
   - name: Player
     uniqueID: 3251368005
     locked: 0
-  - name: Is Ground
-    uniqueID: 3804806107
+  - name: BlackWall
+    uniqueID: 1441664491
     locked: 0
