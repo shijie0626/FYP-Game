@@ -32,21 +32,25 @@ public class GameController : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        myAnimator = GetComponent<Animator>();
     }
 
     void Update()
     {
         // 检查玩家是否在地面上
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
+        
 
         // 处理移动和跳跃
         Move();
 
         // 处理跳跃
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        if (Input.GetButtonDown("Jump") && isGrounded) 
         {
             Jump();
         }
+
+        
     }
 
     void Move()
@@ -56,6 +60,12 @@ public class GameController : MonoBehaviour
 
         // 移动玩家
         rb.velocity = new Vector2(moveDirection * currentSpeed, rb.velocity.y);
+        if (moveDirection > 0.01f)
+            transform.localScale = Vector3.one;
+        else if (moveDirection < -0.01f)
+            transform.localScale = new Vector3(-1, 1, 1);
+
+        myAnimator.SetBool("walk", moveDirection != 0);
     }
 
     void Jump()
@@ -68,15 +78,19 @@ public class GameController : MonoBehaviour
         if (other.tag == "Ladder")
         {
             myrigidbody.gravityScale = 0;
-            myAnimator.SetBool("isClimb", true);
+         
         }
         if (Input.GetAxisRaw("Vertical") > 0 && other.tag == "Ladder")
         {
             myrigidbody.velocity = new Vector3(0, MoveSpeed, 0);
+            myAnimator.SetBool("isClimb", true);
+            myAnimator.SetBool("down", false);
         }
         else if (Input.GetAxisRaw("Vertical") < 0 && other.tag == "Ladder")
         {
             myrigidbody.velocity = new Vector3(0, -MoveSpeed, 0);
+            myAnimator.SetBool("isClimb", false);
+            myAnimator.SetBool("down", true);
         }
         else if (other.tag == "Ladder")
         {
@@ -90,6 +104,7 @@ public class GameController : MonoBehaviour
         {
             myrigidbody.gravityScale = 1f;
             myAnimator.SetBool("isClimb", false);
+            myAnimator.SetBool("down", false);
         }
     }
 }
