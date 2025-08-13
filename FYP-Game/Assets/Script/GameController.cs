@@ -57,15 +57,20 @@ public class GameController : MonoBehaviour
     {
         float moveDirection = Input.GetAxis("Horizontal");
         float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? RunSpeed : MoveSpeed;
-
-        // 移动玩家
-        rb.velocity = new Vector2(moveDirection * currentSpeed, rb.velocity.y);
-        if (moveDirection > 0.01f)
-            transform.localScale = Vector3.one;
-        else if (moveDirection < -0.01f)
-            transform.localScale = new Vector3(-1, 1, 1);
-
         myAnimator.SetBool("walk", moveDirection != 0);
+        // 移动玩家
+        rb.velocity = new Vector3(moveDirection * currentSpeed, rb.velocity.y);
+        if (moveDirection > 0.01f) 
+        { 
+            transform.localScale = Vector3.one; 
+        }
+           
+        else if (moveDirection < -0.01f)
+        { 
+            transform.localScale = new Vector3(-1, 1, 1); 
+        }
+        
+        
     }
 
     void Jump()
@@ -78,24 +83,34 @@ public class GameController : MonoBehaviour
         if (other.tag == "Ladder")
         {
             myrigidbody.gravityScale = 0;
-         
+            myAnimator.SetBool("walk", false);
         }
         if (Input.GetAxisRaw("Vertical") > 0 && other.tag == "Ladder")
         {
             myrigidbody.velocity = new Vector3(0, MoveSpeed, 0);
             myAnimator.SetBool("isClimb", true);
             myAnimator.SetBool("down", false);
+        
         }
+
         else if (Input.GetAxisRaw("Vertical") < 0 && other.tag == "Ladder")
         {
             myrigidbody.velocity = new Vector3(0, -MoveSpeed, 0);
             myAnimator.SetBool("isClimb", false);
             myAnimator.SetBool("down", true);
+ 
         }
         else if (other.tag == "Ladder")
         {
             myrigidbody.velocity = new Vector3(0, 0, 0);
         }
+        if (Input.GetAxisRaw("Vertical") == 0 && other.tag == "Ladder")
+        {
+            myAnimator.SetBool("isClimb", false);
+            myAnimator.SetBool("down", false);
+        }
+
+
     }
 
     private void OnTriggerExit2D(Collider2D other)
