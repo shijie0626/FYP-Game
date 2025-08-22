@@ -77,6 +77,15 @@ public class GameController : MonoBehaviour
     {
         rb.AddForce(new Vector2(0f, JumpSpeed), ForceMode2D.Impulse);
     }
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.tag == "DeadZone")
+        {
+            gameObject.transform.position = RespawnPoint;
+            FindObjectOfType<Health>().currentHealth -= 1;
+
+        }
+    }
 
     private void OnTriggerStay2D(Collider2D other)
     {
