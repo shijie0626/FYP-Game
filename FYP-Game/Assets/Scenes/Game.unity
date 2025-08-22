@@ -11004,6 +11004,7 @@ MonoBehaviour:
   patrolPoints:
   - {fileID: 0}
   - {fileID: 0}
+  - {fileID: 0}
   waitTime: 2
   spriteRenderer: {fileID: 0}
   fadeDuration: 0.5
@@ -11140,7 +11141,7 @@ Transform:
   m_GameObject: {fileID: 151349423}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 92.92, y: -74.3617, z: 0}
+  m_LocalPosition: {x: 112.78, y: -74.43, z: 0}
   m_LocalScale: {x: 4.593971, y: 4.593971, z: 4.593971}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -54298,7 +54299,7 @@ Transform:
   m_GameObject: {fileID: 844422100}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 110.3, y: -73.14, z: 0}
+  m_LocalPosition: {x: 127.08, y: -72.76, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
