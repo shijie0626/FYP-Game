@@ -1,9 +1,11 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class FadeOnTrigger : MonoBehaviour
 {
-    public SpriteRenderer targetRenderer; // Assign in Inspector
-    public float fadeDuration = 0.5f; // Time to fade in/out
+    public SpriteRenderer targetRenderer;
+    public float fadeDuration = 0.5f;
 
     private Coroutine fadeRoutine;
 
@@ -11,7 +13,7 @@ public class FadeOnTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            // Fade out when entering
+            // ??? -> ?????
             StartFade(0f);
         }
     }
@@ -20,7 +22,15 @@ public class FadeOnTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            // Fade in when leaving
+            // ???????????
+            PlayerInvisibility invis = other.GetComponent<PlayerInvisibility>();
+            if (invis != null && invis.IsInvisible)
+            {
+                // ????????????? -> ???
+                return;
+            }
+
+            // ???????? -> ??
             StartFade(1f);
         }
     }
@@ -47,9 +57,11 @@ public class FadeOnTrigger : MonoBehaviour
             yield return null;
         }
 
-        // Make sure it finishes exactly at the target alpha
+        // ??????????
         Color finalColor = targetRenderer.color;
         finalColor.a = targetAlpha;
         targetRenderer.color = finalColor;
     }
+
+
 }
