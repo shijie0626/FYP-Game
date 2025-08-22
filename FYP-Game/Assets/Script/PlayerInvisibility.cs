@@ -1,25 +1,30 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlayerInvisibility : MonoBehaviour
 {
-    private bool isInvisible = false;  // 实际存储的隐身状态
+    private SpriteRenderer spriteRenderer;
+    private bool isInvisible = false;
 
-    public bool IsInvisible   // 外部可以读
+    private int normalLayer;
+    private int invisibleLayer;
+
+    public bool IsInvisible   // 给外部脚本用来查询状态
     {
         get { return isInvisible; }
     }
 
-    private SpriteRenderer spriteRenderer;
-    private int normalLayer;
-    private int invisibleLayer;
-
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+
+        // 需要在 Unity 里手动创建 "Player" 和 "InvisiblePlayer" 两个 Layer
         normalLayer = LayerMask.NameToLayer("Player");
         invisibleLayer = LayerMask.NameToLayer("InvisiblePlayer");
+
+        if (normalLayer == -1 || invisibleLayer == -1)
+        {
+            Debug.LogError("请在 Unity Layer 设置中添加 'Player' 和 'InvisiblePlayer' 层！");
+        }
     }
 
     void Update()
@@ -37,7 +42,7 @@ public class PlayerInvisibility : MonoBehaviour
         // 切换外观
         spriteRenderer.enabled = !isInvisible;
 
-        // 切换层
+        // 切换层 (隐身时换到 InvisiblePlayer 层)
         gameObject.layer = isInvisible ? invisibleLayer : normalLayer;
     }
 }

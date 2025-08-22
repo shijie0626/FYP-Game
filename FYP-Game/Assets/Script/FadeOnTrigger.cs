@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,8 +13,7 @@ public class FadeOnTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            // ??? -> ?????
-            StartFade(0f);
+            StartFade(0f); // 进入房间 -> block 渐隐
         }
     }
 
@@ -22,15 +21,15 @@ public class FadeOnTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            // ???????????
+            // 检查玩家是否隐身
             PlayerInvisibility invis = other.GetComponent<PlayerInvisibility>();
             if (invis != null && invis.IsInvisible)
             {
-                // ????????????? -> ???
+                // 玩家只是隐身，不算真正离开
                 return;
             }
 
-            // ???????? -> ??
+            // 真正离开房间 -> 渐显
             StartFade(1f);
         }
     }
@@ -57,11 +56,9 @@ public class FadeOnTrigger : MonoBehaviour
             yield return null;
         }
 
-        // ??????????
+        // 确保最后到目标透明度
         Color finalColor = targetRenderer.color;
         finalColor.a = targetAlpha;
         targetRenderer.color = finalColor;
     }
-
-
 }
