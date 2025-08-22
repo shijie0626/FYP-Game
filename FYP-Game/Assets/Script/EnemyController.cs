@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class EnemyAIWithFade : MonoBehaviour
 {
@@ -22,6 +22,10 @@ public class EnemyAIWithFade : MonoBehaviour
     private bool chasingPlayer = false;
     private Coroutine fadeRoutine;
     private bool playerInSameRoom = false;
+    public Transform groundCheck;  // 地面检查的位置
+    public LayerMask groundLayer;  // 定义什么是地面
+
+    private bool isGrounded;
 
     private void Start()
     {
@@ -51,6 +55,8 @@ public class EnemyAIWithFade : MonoBehaviour
             else
                 Patrol();
         }
+
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
     }
 
     private void ChasePlayer(float distanceToPlayer)
