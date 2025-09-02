@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Beta.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
+    path: Assets/Scenes/MainMenu.unity
+    guid: a7799edba0bf4ef4db9531ec38f08bff
+  - enabled: 1
+    path: Assets/Scenes/Frist Manga.unity
+    guid: 4f5639c2165ef8f4bbf41f8edbeced5f
+  - enabled: 1
+    path: Assets/Scenes/Game.unity
+    guid: 007e00c47087c944996df563f316dd21
   m_configObjects: {}
