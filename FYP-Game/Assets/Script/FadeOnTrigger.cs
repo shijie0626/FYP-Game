@@ -1,47 +1,42 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections;
 
 public class FadeOnTrigger : MonoBehaviour
 {
-    public SpriteRenderer targetRenderer;
+    public SpriteRenderer targetRenderer; // the black overlay in front of the room
     public float fadeDuration = 0.5f;
 
     private Coroutine fadeRoutine;
+    private int occupants = 0; // number of "player-like" colliders currently inside
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
+        // accept either real player or presence beacon tag
+        if (other.CompareTag("Player") || other.CompareTag("PlayerBeacon"))
         {
-            StartFade(0f); // 进入房间 -> block 渐隐
+            occupants++;
+            if (occupants == 1) // first occupant -> light up the room
+                StartFade(0f); // fade overlay to transparent (room lit)
         }
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") || other.CompareTag("PlayerBeacon"))
         {
-            // 检查玩家是否隐身
-            PlayerInvisibility invis = other.GetComponent<PlayerInvisibility>();
-            if (invis != null && invis.IsInvisible)
-            {
-                // 玩家只是隐身，不算真正离开
-                return;
-            }
-
-            // 真正离开房间 -> 渐显
-            StartFade(1f);
+            occupants = Mathf.Max(0, occupants - 1);
+            if (occupants == 0) // nobody left -> darken
+                StartFade(1f); // fade overlay to opaque (room dark)
         }
     }
 
     void StartFade(float targetAlpha)
     {
-        if (fadeRoutine != null)
-            StopCoroutine(fadeRoutine);
+        if (fadeRoutine != null) StopCoroutine(fadeRoutine);
         fadeRoutine = StartCoroutine(FadeToAlpha(targetAlpha));
     }
 
-    System.Collections.IEnumerator FadeToAlpha(float targetAlpha)
+    IEnumerator FadeToAlpha(float targetAlpha)
     {
         float startAlpha = targetRenderer.color.a;
         float timer = 0f;
@@ -56,7 +51,6 @@ public class FadeOnTrigger : MonoBehaviour
             yield return null;
         }
 
-        // 确保最后到目标透明度
         Color finalColor = targetRenderer.color;
         finalColor.a = targetAlpha;
         targetRenderer.color = finalColor;

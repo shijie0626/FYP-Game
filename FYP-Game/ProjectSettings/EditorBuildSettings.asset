@@ -8,4 +8,13 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Beta.unity
     guid: 2cda990e2423bbf4892e6590ba056729
+  - enabled: 1
+    path: Assets/Scenes/Game.unity
+    guid: 007e00c47087c944996df563f316dd21
+  - enabled: 1
+    path: Assets/Scenes/Test BE.unity
+    guid: 0aa14815834b76f48ab3ceb927614cc1
+  - enabled: 1
+    path: Assets/Scenes/Test HE.unity
+    guid: bb9e27ce4161358408b052ae20216704
   m_configObjects: {}

@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Ladder
   - DeadZone
+  - HidingSpot
   layers:
   - Default
   - TransparentFX
@@ -16,7 +17,7 @@ TagManager:
   - Player
   - Ladder
   - InvisiblePlayer
-  - 
+  - HidingSpot
   - 
   - 
   - 
