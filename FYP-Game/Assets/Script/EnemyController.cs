@@ -1,4 +1,6 @@
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Video;
+using System.Collections;
 
 public class EnemyAIWithFade : MonoBehaviour
 {
@@ -9,101 +11,120 @@ public class EnemyAIWithFade : MonoBehaviour
     public float stopRange = 1f;
 
     [Header("Patrol Settings")]
-    public Transform[] patrolPoints;
-    public float waitTime = 2f;
+    public Transform pointA;
+    public Transform pointB;
+    public float waitTime = 0.5f;
 
     [Header("Fade Settings")]
     public SpriteRenderer spriteRenderer;
     public float fadeDuration = 0.5f;
 
-    private int currentPoint = 0;
-    private float waitTimer;
+    [Header("Ground Check")]
+    public Transform groundCheck;
+    public LayerMask groundLayer;
+    public float groundCheckRadius = 0.1f;
+
+    [Header("Spawn Settings")]
+    public Transform spawnPoint;
+
+    [Header("Player Active Reference")]
+    public PlayerToggleWithBeacon playerToggle; // 用来检测玩家是否处于躲藏状态
+
+    [Header("Ghost Kill Settings")]
+    public VideoClip killVideoClip; // 🎥 assign different clip for each ghost
+
     private Rigidbody2D rb;
+    private Animator animator;
     private bool chasingPlayer = false;
+    private bool isGrounded;
     private Coroutine fadeRoutine;
-    private bool playerInSameRoom = false;
+    private float waitTimer = 0f;
+    private int moveDirection = 1;
+
+    private void Awake()
+    {
+        if (spawnPoint != null)
+            transform.position = spawnPoint.position;
+    }
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        waitTimer = waitTime;
-        SetAlpha(0f); // Start invisible
+        animator = GetComponent<Animator>();
+
+        SetAlpha(0f);
+        moveDirection = 1;
     }
 
     private void Update()
     {
-        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-        if (playerInSameRoom && distanceToPlayer <= detectionRange)
-            chasingPlayer = true;
-        else if (distanceToPlayer > detectionRange * 1.2f)
-            chasingPlayer = false;
+        // 判断玩家是否处于躲藏状态
+        bool isPlayerActive = playerToggle != null ? playerToggle.IsPlayerActive() : true;
 
-        if (!playerInSameRoom)
+        if (!isPlayerActive)
         {
-            // Patrol even when invisible
+            // 玩家在躲藏状态 -> 敌人直接巡逻，不理会玩家
             Patrol();
+            if (animator != null)
+                animator.SetFloat("Speed", Mathf.Abs(rb.velocity.x));
+            return;
         }
-        else
+
+        // 玩家不在躲藏 -> 敌人可以追踪
+        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+        chasingPlayer = (distanceToPlayer <= detectionRange);
+
+        if (isGrounded)
         {
             if (chasingPlayer)
                 ChasePlayer(distanceToPlayer);
             else
                 Patrol();
         }
+
+        if (animator != null)
+            animator.SetFloat("Speed", Mathf.Abs(rb.velocity.x));
     }
 
     private void ChasePlayer(float distanceToPlayer)
     {
         if (distanceToPlayer > stopRange)
         {
-            Vector2 direction = (player.position - transform.position).normalized;
-            rb.MovePosition(rb.position + direction * moveSpeed * Time.deltaTime);
+            moveDirection = player.position.x > transform.position.x ? 1 : -1;
+            Vector2 newPos = rb.position + new Vector2(moveDirection * moveSpeed * Time.deltaTime, 0);
+            rb.MovePosition(newPos);
+
+            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * moveDirection, transform.localScale.y, 1);
+            rb.velocity = new Vector2(moveDirection * moveSpeed, rb.velocity.y);
         }
         else
         {
             rb.velocity = Vector2.zero;
         }
+
+        StartFade(1f);
     }
 
     private void Patrol()
     {
-        if (patrolPoints.Length == 0) return;
+        Vector2 newPos = rb.position + new Vector2(moveDirection * moveSpeed * Time.deltaTime, 0);
+        rb.MovePosition(newPos);
 
-        Transform targetPoint = patrolPoints[currentPoint];
-        Vector2 direction = (targetPoint.position - transform.position).normalized;
-        rb.MovePosition(rb.position + direction * moveSpeed * Time.deltaTime);
+        transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * moveDirection, transform.localScale.y, 1);
 
-        if (Vector2.Distance(transform.position, targetPoint.position) < 0.2f)
-        {
-            if (waitTimer <= 0f)
-            {
-                currentPoint = (currentPoint + 1) % patrolPoints.Length;
-                waitTimer = waitTime;
-            }
-            else
-            {
-                waitTimer -= Time.deltaTime;
-            }
-        }
-    }
+        if (pointA != null && Mathf.Abs(rb.position.x - pointA.position.x) < 0.1f)
+            moveDirection = 1;
+        else if (pointB != null && Mathf.Abs(rb.position.x - pointB.position.x) < 0.1f)
+            moveDirection = -1;
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Room"))
-        {
-            playerInSameRoom = true;
-            StartFade(1f);
-        }
-    }
+        if (waitTimer > 0)
+            waitTimer -= Time.deltaTime;
 
-    private void OnTriggerExit2D(Collider2D other)
-    {
-        if (other.CompareTag("Room"))
-        {
-            playerInSameRoom = false;
-            StartFade(0f);
-        }
+        rb.velocity = new Vector2(moveDirection * moveSpeed, rb.velocity.y);
+
+        StartFade(0f);
     }
 
     void StartFade(float targetAlpha)
@@ -113,7 +134,7 @@ public class EnemyAIWithFade : MonoBehaviour
         fadeRoutine = StartCoroutine(FadeToAlpha(targetAlpha));
     }
 
-    System.Collections.IEnumerator FadeToAlpha(float targetAlpha)
+    IEnumerator FadeToAlpha(float targetAlpha)
     {
         float startAlpha = spriteRenderer.color.a;
         float timer = 0f;
@@ -134,5 +155,49 @@ public class EnemyAIWithFade : MonoBehaviour
         Color c = spriteRenderer.color;
         c.a = alpha;
         spriteRenderer.color = c;
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            // 只有在玩家不处于躲藏状态时，才能触发死亡
+            if (playerToggle != null && playerToggle.IsPlayerActive())
+            {
+                if (GameOverManager.Instance != null)
+                {
+                    GameOverManager.Instance.KillPlayer(killVideoClip);
+                }
+            }
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (groundCheck != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, detectionRange);
+
+        if (pointA != null)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(pointA.position, 0.1f);
+        }
+        if (pointB != null)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(pointB.position, 0.1f);
+        }
+
+        if (spawnPoint != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawSphere(spawnPoint.position, 0.15f);
+        }
     }
 }
