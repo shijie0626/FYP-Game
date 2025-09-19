@@ -109,21 +109,30 @@ public class EnemyAIWithFade : MonoBehaviour
 
     private void Patrol()
     {
+        // move horizontally
         Vector2 newPos = rb.position + new Vector2(moveDirection * moveSpeed * Time.deltaTime, 0);
         rb.MovePosition(newPos);
 
+        // flip sprite to face direction
         transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * moveDirection, transform.localScale.y, 1);
 
-        if (pointA != null && Mathf.Abs(rb.position.x - pointA.position.x) < 0.1f)
-            moveDirection = 1;
-        else if (pointB != null && Mathf.Abs(rb.position.x - pointB.position.x) < 0.1f)
-            moveDirection = -1;
+        // 🔹 Clamp patrol within [pointA.x, pointB.x]
+        if (pointA != null && pointB != null)
+        {
+            if (rb.position.x <= Mathf.Min(pointA.position.x, pointB.position.x))
+            {
+                moveDirection = 1; // force move right
+            }
+            else if (rb.position.x >= Mathf.Max(pointA.position.x, pointB.position.x))
+            {
+                moveDirection = -1; // force move left
+            }
+        }
 
-        if (waitTimer > 0)
-            waitTimer -= Time.deltaTime;
-
+        // keep velocity consistent with movement
         rb.velocity = new Vector2(moveDirection * moveSpeed, rb.velocity.y);
 
+        // fade out when patrolling
         StartFade(0f);
     }
 

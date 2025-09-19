@@ -109,7 +109,7 @@ public class NPCDialogue : MonoBehaviour
         {
             StartDialogue();
         }
-        else if (isTalking && Input.GetKeyDown(KeyCode.Space))
+        else if (isTalking && Input.GetKeyDown(KeyCode.E))
         {
             NextLine();
         }
