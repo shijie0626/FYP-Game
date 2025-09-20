@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
+using System.Collections;
 
+[RequireComponent(typeof(AudioSource))]
 public class KeyItem : MonoBehaviour
 {
     [Header("Item Settings")]
@@ -9,14 +11,25 @@ public class KeyItem : MonoBehaviour
     [Header("UI Prompt")]
     public GameObject promptUI;
 
+    [Header("Audio")]
+    public AudioClip pickupClip;
+    [Range(0f, 1f)] public float volume = 1f;
+
+    [Header("Visuals")]
+    public bool hideOnPickup = true; // ✅ 是否在拾取时立即隐藏物品
+
     private bool playerInRange = false;
+    private AudioSource audioSource;
 
     void Start()
     {
         if (promptUI != null)
             promptUI.SetActive(false);
 
-        // ✅ Destroy this item if already collected
+        audioSource = GetComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+
+        // ✅ 如果物品已经被收集过 → 直接销毁
         if (GameController.Instance != null && GameController.Instance.HasItemBeenCollected(itemID))
         {
             Destroy(gameObject);
@@ -57,7 +70,7 @@ public class KeyItem : MonoBehaviour
             inv.AddItem(itemID, false);
         }
 
-        // ✅ If main item → set checkpoint
+        // ✅ 如果是关键物品 → 设置存档点
         if (GameController.Instance != null)
         {
             GameController.Instance.SetCheckpoint(transform.position, itemID);
@@ -66,6 +79,39 @@ public class KeyItem : MonoBehaviour
         if (promptUI != null)
             promptUI.SetActive(false);
 
+        // 🔊 播放音效
+        if (pickupClip != null)
+        {
+            audioSource.PlayOneShot(pickupClip, volume);
+        }
+
+        // ✅ 隐藏视觉效果（Renderer + Collider）
+        if (hideOnPickup)
+        {
+            foreach (Renderer r in GetComponentsInChildren<Renderer>())
+            {
+                r.enabled = false;
+            }
+            foreach (Collider2D c in GetComponentsInChildren<Collider2D>())
+            {
+                c.enabled = false;
+            }
+        }
+
+        // 延迟销毁物品
+        if (pickupClip != null)
+        {
+            StartCoroutine(DestroyAfterSound());
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    IEnumerator DestroyAfterSound()
+    {
+        yield return new WaitForSeconds(pickupClip.length);
         Destroy(gameObject);
     }
 }

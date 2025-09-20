@@ -268,11 +268,22 @@ public class NPCDialogue : MonoBehaviour
                 if (door != null) door.enabled = false;
         }
 
+        // 🔴 如果是 Bad Ending，直接跳转
         if (usingBadEnding)
         {
             Time.timeScale = 1f;
             SceneManager.LoadScene(badEndingSceneName);
             yield break;
+        }
+
+        // ✅ 如果是 Good Ending，对接物品切换
+        if (usingGoodEnding)
+        {
+            ItemSwitchController switcher = FindObjectOfType<ItemSwitchController>();
+            if (switcher != null)
+            {
+                switcher.ShowHappyEndingItems();
+            }
         }
 
         if (enemiesToActivate != null)
@@ -291,6 +302,8 @@ public class NPCDialogue : MonoBehaviour
             StartCoroutine(FadePrompt(1f));
         }
     }
+
+
 
     IEnumerator FadePrompt(float targetAlpha, System.Action onComplete = null)
     {

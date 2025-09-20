@@ -52,6 +52,7 @@ public class GameController : MonoBehaviour
         }
     }
 
+
     void Update()
     {
         // Ground check
