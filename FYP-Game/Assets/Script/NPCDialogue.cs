@@ -10,24 +10,21 @@ public class NPCDialogue : MonoBehaviour
     [Header("UI References")]
     public GameObject dialogueUI;
     public Text dialogueText;
-    public Image leftPortrait;    // NPC
-    public Image rightPortrait;   // Player
+    public Image leftPortrait;
+    public Image rightPortrait;
     public GameObject promptUI;
-    public Image backgroundImage; // Black background (semi-transparent)
+    public Image backgroundImage;
 
     [Header("Default Dialogue Data")]
-    [TextArea(2, 5)]
-    public string[] normalDialogueLines;
+    [TextArea(2, 5)] public string[] normalDialogueLines;
     public bool[] normalIsPlayerSpeaking;
 
     [Header("Bad Ending Dialogue Data")]
-    [TextArea(2, 5)]
-    public string[] badEndingDialogueLines;
+    [TextArea(2, 5)] public string[] badEndingDialogueLines;
     public bool[] badEndingIsPlayerSpeaking;
 
     [Header("Good Ending Dialogue Data")]
-    [TextArea(2, 5)]
-    public string[] goodEndingDialogueLines;
+    [TextArea(2, 5)] public string[] goodEndingDialogueLines;
     public bool[] goodEndingIsPlayerSpeaking;
 
     [Header("Portraits")]
@@ -46,21 +43,21 @@ public class NPCDialogue : MonoBehaviour
     public float promptFadeDuration = 0.3f;
 
     [Header("Quest Settings")]
-    public Collider2D[] doorColliders;  // doors to unlock
+    public Collider2D[] doorColliders;
     public bool unlockAfterDialogue = false;
     public GameObject[] enemiesToActivate;
 
-    [Header("Good Ending Time Trial Settings")]
-    public GameObject[] goodEndingEnemies; // enemies spawned for time trial
-    public float goodEndingTimeLimit = 60f; // adjustable in inspector
-    public Text timerText; // UI Text showing countdown
-    public VideoPlayer deathVideoPlayer; // Death scene video
-    public CanvasGroup deathVideoCanvas; // Video canvas
-    public CanvasGroup gameOverPanel; // GameOver UI panel
-    public CanvasGroup fadePanel; // Fullscreen black panel for fade out
-    public Button restartButton; // Restart button
+    [Header("Good Ending Settings")]
+    public GameObject[] goodEndingEnemies;
+    public float goodEndingTimeLimit = 60f;
+    public Text timerText;
+    public VideoPlayer deathVideoPlayer;
+    public CanvasGroup deathVideoCanvas;
+    public CanvasGroup gameOverPanel;
+    public CanvasGroup fadePanel;
+    public Button restartButton;
 
-    [Header("Ending Settings")]
+    [Header("Ending Items")]
     public List<string> badEndingItems = new List<string> { "Hand", "Doll", "Ring" };
     public List<string> goodEndingHiddenItems = new List<string> { "Newspaper", "Letter" };
     public string badEndingSceneName = "BadEndingScene";
@@ -68,7 +65,6 @@ public class NPCDialogue : MonoBehaviour
     private bool playerInRange = false;
     private bool isTalking = false;
     private int currentLine = 0;
-
     private bool usingBadEnding = false;
     private bool usingGoodEnding = false;
 
@@ -83,15 +79,10 @@ public class NPCDialogue : MonoBehaviour
     private float remainingTime;
     private bool isTimeTrialActive = false;
 
-    [Header("Z Lock Settings")]
-    public float videoZ = -5f;       // above gameplay
-    public float gameOverZ = -4f;    // above video
-
     void Start()
     {
-        Time.timeScale = 1f; // Ensure time is running at start
+        Time.timeScale = 1f;
 
-        // Setup dialogue UI
         if (dialogueUI != null)
         {
             dialogueUI.SetActive(false);
@@ -99,7 +90,6 @@ public class NPCDialogue : MonoBehaviour
             dialogueCanvas.alpha = 0f;
         }
 
-        // Setup prompt UI
         if (promptUI != null)
         {
             promptCanvas = promptUI.GetComponent<CanvasGroup>() ?? promptUI.AddComponent<CanvasGroup>();
@@ -107,7 +97,6 @@ public class NPCDialogue : MonoBehaviour
             promptUI.SetActive(false);
         }
 
-        // Set portraits
         if (npcSprite != null) leftPortrait.sprite = npcSprite;
         if (playerSprite != null) rightPortrait.sprite = playerSprite;
 
@@ -116,48 +105,32 @@ public class NPCDialogue : MonoBehaviour
         leftPortrait.transform.localScale = Vector3.one * inactiveScale;
         rightPortrait.transform.localScale = Vector3.one * inactiveScale;
 
-        // Background color
-        if (backgroundImage != null)
-            backgroundImage.color = new Color(0f, 0f, 0f, 0.4f);
+        if (backgroundImage != null) backgroundImage.color = new Color(0f, 0f, 0f, 0.4f);
 
-        // Disable enemies at start
         if (enemiesToActivate != null)
-            foreach (GameObject enemy in enemiesToActivate)
+            foreach (var enemy in enemiesToActivate)
                 if (enemy != null) enemy.SetActive(false);
 
         if (goodEndingEnemies != null)
-            foreach (GameObject enemy in goodEndingEnemies)
+            foreach (var enemy in goodEndingEnemies)
                 if (enemy != null) enemy.SetActive(false);
 
-        if (deathVideoCanvas != null)
-            deathVideoCanvas.alpha = 0f;
-
-        if (timerText != null)
-            timerText.gameObject.SetActive(false);
-
-        if (gameOverPanel != null)
-            gameOverPanel.alpha = 0f;
-
-        if (fadePanel != null)
-        {
-            fadePanel.alpha = 0f;
-            fadePanel.gameObject.SetActive(true);
-        }
+        if (deathVideoCanvas != null) deathVideoCanvas.alpha = 0f;
+        if (timerText != null) timerText.gameObject.SetActive(false);
+        if (gameOverPanel != null) gameOverPanel.alpha = 0f;
+        if (fadePanel != null) { fadePanel.alpha = 0f; fadePanel.gameObject.SetActive(true); }
 
         if (deathVideoPlayer != null)
             deathVideoPlayer.loopPointReached += OnDeathVideoFinished;
 
-        // Setup restart button
         if (restartButton != null)
             restartButton.onClick.AddListener(RestartGame);
     }
 
     void Update()
     {
-        if (playerInRange && !isTalking && Input.GetKeyDown(KeyCode.E))
-            StartDialogue();
-        else if (isTalking && Input.GetKeyDown(KeyCode.Space))
-            NextLine();
+        if (playerInRange && !isTalking && Input.GetKeyDown(KeyCode.E)) StartDialogue();
+        else if (isTalking && Input.GetKeyDown(KeyCode.Space)) NextLine();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -194,10 +167,9 @@ public class NPCDialogue : MonoBehaviour
     {
         isTalking = true;
         currentLine = 0;
+        Time.timeScale = 0f;
 
-        Time.timeScale = 0f; // freeze gameplay
-
-        // Determine which dialogue to use
+        // Good Ending 判断逻辑
         if (playerInventory != null &&
             playerInventory.HasAllHiddenItems(goodEndingHiddenItems) &&
             playerInventory.HasAllMainItems(badEndingItems))
@@ -287,7 +259,7 @@ public class NPCDialogue : MonoBehaviour
     {
         isTalking = false;
 
-        // Fade out dialogue UI
+        // 对话 UI 淡出
         if (dialogueCanvas != null)
         {
             float elapsed = 0f;
@@ -301,59 +273,54 @@ public class NPCDialogue : MonoBehaviour
             dialogueCanvas.alpha = 0f;
         }
 
-        if (dialogueUI != null)
-            dialogueUI.SetActive(false);
+        if (dialogueUI != null) dialogueUI.SetActive(false);
 
-        // Unlock doors
         if (unlockAfterDialogue && doorColliders != null)
-        {
-            foreach (Collider2D door in doorColliders)
-                if (door != null) door.enabled = false;
-        }
+            foreach (var door in doorColliders) if (door != null) door.enabled = false;
 
-        // Restore gameplay time
         Time.timeScale = 1f;
 
-        // Bad Ending
         if (usingBadEnding)
         {
             SceneManager.LoadScene(badEndingSceneName);
             yield break;
         }
 
-        // Good Ending Time Trial
         if (usingGoodEnding)
         {
-            // Disable previous enemies
-            if (enemiesToActivate != null)
-                foreach (GameObject enemy in enemiesToActivate)
-                    if (enemy != null) enemy.SetActive(false);
-
-            // Activate good ending enemies
+            // ✅ 激活 Good Ending 敌人
             if (goodEndingEnemies != null)
-                foreach (GameObject enemy in goodEndingEnemies)
+                foreach (var enemy in goodEndingEnemies)
                     if (enemy != null) enemy.SetActive(true);
 
-            remainingTime = goodEndingTimeLimit;
-            isTimeTrialActive = true;
+            // ✅ 敌人出现时显示新物品
+            ItemChangeController itemSwitch = FindObjectOfType<ItemChangeController>();
+            if (itemSwitch != null)
+                itemSwitch.ShowHappyEndingItems();
 
-            if (timerText != null)
-                timerText.gameObject.SetActive(true);
-
-            StartCoroutine(GoodEndingTimer());
+            // ✅ 倒计时独立启动
+            TriggerGoodEndingCountdown(goodEndingTimeLimit);
         }
         else
         {
-            // Normal dialogue finished: activate first batch enemies
             if (enemiesToActivate != null)
-            {
-                foreach (GameObject enemy in enemiesToActivate)
+                foreach (var enemy in enemiesToActivate)
                     if (enemy != null) enemy.SetActive(true);
-            }
         }
     }
 
-    IEnumerator GoodEndingTimer()
+    public void TriggerGoodEndingCountdown(float duration)
+    {
+        remainingTime = duration;
+        isTimeTrialActive = true;
+
+        if (timerText != null)
+            timerText.gameObject.SetActive(true);
+
+        StartCoroutine(GoodEndingCountdown());
+    }
+
+    private IEnumerator GoodEndingCountdown()
     {
         while (isTimeTrialActive && remainingTime > 0f)
         {
@@ -362,7 +329,7 @@ public class NPCDialogue : MonoBehaviour
             if (timerText != null)
             {
                 timerText.text = Mathf.Ceil(remainingTime).ToString("F0");
-                if (remainingTime <= 10f)
+                if (remainingTime <= 60f)
                 {
                     float alpha = Mathf.PingPong(Time.time * 2f, 1f);
                     timerText.color = new Color(1f, 0f, 0f, alpha);
@@ -379,37 +346,33 @@ public class NPCDialogue : MonoBehaviour
         if (remainingTime <= 0f)
         {
             isTimeTrialActive = false;
-            if (timerText != null)
-                timerText.gameObject.SetActive(false);
+            if (timerText != null) timerText.gameObject.SetActive(false);
 
-            // Freeze gameplay and fade out
+            // ✅ 停止所有音效
+            ItemChangeController itemSwitch = FindObjectOfType<ItemChangeController>();
+            if (itemSwitch != null) itemSwitch.StopAllAudio();
+
             Time.timeScale = 0f;
-            if (fadePanel != null)
-                yield return StartCoroutine(FadeCanvas(fadePanel, 1f));
+            if (fadePanel != null) yield return StartCoroutine(FadeCanvas(fadePanel, 1f));
 
-            // Play death video
             if (deathVideoPlayer != null && deathVideoCanvas != null)
             {
                 deathVideoCanvas.gameObject.SetActive(true);
                 deathVideoCanvas.alpha = 1f;
                 deathVideoPlayer.Play();
             }
-            else
+            else if (gameOverPanel != null)
             {
-                // fallback if no video
-                if (gameOverPanel != null)
-                {
-                    gameOverPanel.gameObject.SetActive(true);
-                    StartCoroutine(FadeCanvas(gameOverPanel, 1f));
-                }
+                gameOverPanel.gameObject.SetActive(true);
+                StartCoroutine(FadeCanvas(gameOverPanel, 1f));
             }
         }
+
     }
 
     void OnDeathVideoFinished(VideoPlayer vp)
     {
-        if (deathVideoCanvas != null)
-            deathVideoCanvas.alpha = 0f;
+        if (deathVideoCanvas != null) deathVideoCanvas.alpha = 0f;
 
         if (gameOverPanel != null)
         {
@@ -420,27 +383,25 @@ public class NPCDialogue : MonoBehaviour
 
     public void CompleteGoodEnding()
     {
-        isTimeTrialActive = false;
-        if (timerText != null)
-            timerText.gameObject.SetActive(false);
+        // 切场景到 Happy Ending
+        ItemChangeController itemSwitch = FindObjectOfType<ItemChangeController>();
+        if (itemSwitch != null)
+            itemSwitch.ShowHappyEndingItems();
 
         SceneManager.LoadScene("HappyEnding");
     }
 
-    // Restart button handler
     public void RestartGame()
     {
-        Time.timeScale = 1f; // Reset time scale
+        Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     IEnumerator FadePrompt(float targetAlpha, System.Action onComplete = null)
     {
         if (promptCanvas == null) yield break;
-
         float startAlpha = promptCanvas.alpha;
         float elapsed = 0f;
-
         while (elapsed < promptFadeDuration)
         {
             elapsed += Time.unscaledDeltaTime;
@@ -448,7 +409,6 @@ public class NPCDialogue : MonoBehaviour
             promptCanvas.alpha = Mathf.Lerp(startAlpha, targetAlpha, t);
             yield return null;
         }
-
         promptCanvas.alpha = targetAlpha;
         onComplete?.Invoke();
     }
@@ -458,7 +418,6 @@ public class NPCDialogue : MonoBehaviour
         float startAlpha = cg.alpha;
         float elapsed = 0f;
         float duration = 0.5f;
-
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
@@ -466,7 +425,6 @@ public class NPCDialogue : MonoBehaviour
             cg.alpha = Mathf.Lerp(startAlpha, targetAlpha, t);
             yield return null;
         }
-
         cg.alpha = targetAlpha;
     }
 }

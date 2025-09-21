@@ -118,6 +118,10 @@ public class GameOverManager : MonoBehaviour
             }
 
             gameOverPanel.alpha = 1f;
+
+            // ✅ 出现 Game Over Panel 时立刻停掉所有音效
+            ItemChangeController icc = FindObjectOfType<ItemChangeController>();
+            if (icc != null) icc.StopAllAudio();
         }
     }
 
@@ -127,6 +131,10 @@ public class GameOverManager : MonoBehaviour
         {
             gameOverPanel.gameObject.SetActive(true);
             gameOverPanel.alpha = 1f;
+
+            // ✅ 即时 Game Over 也停掉音效
+            ItemChangeController icc = FindObjectOfType<ItemChangeController>();
+            if (icc != null) icc.StopAllAudio();
         }
     }
 
