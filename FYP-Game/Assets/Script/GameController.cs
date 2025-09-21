@@ -10,6 +10,7 @@ public class GameController : MonoBehaviour
     public float MoveSpeed = 5f;
     public Rigidbody2D myrigidbody;
     public Transform groundCheck;
+    public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
 
     private bool isGrounded;
@@ -17,7 +18,7 @@ public class GameController : MonoBehaviour
 
     [Header("Respawn Settings")]
     public Vector3 RespawnPoint;
-    private string currentCheckpointItemID; // track which item set the checkpoint
+    private string currentCheckpointItemID;
 
     [Header("Audio")]
     public AudioSource DeadSound;
@@ -25,12 +26,12 @@ public class GameController : MonoBehaviour
     [Header("Darkness Effect")]
     public Image darknessPanel;
 
-    // Slowness state
     private bool isSlowed = false;
     private float baseMoveSpeed;
 
-    // Collected main items
     private HashSet<string> collectedItems = new HashSet<string>();
+
+    private Coroutine darknessCoroutine;
 
     void Awake()
     {
@@ -43,37 +44,28 @@ public class GameController : MonoBehaviour
         myAnimator = GetComponent<Animator>();
         baseMoveSpeed = MoveSpeed;
 
-        // Ensure darkness starts invisible
         if (darknessPanel != null)
         {
             Color c = darknessPanel.color;
             c.a = 0f;
             darknessPanel.color = c;
+            darknessPanel.gameObject.SetActive(false);
         }
     }
 
-
     void Update()
     {
-        // Ground check
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
-
-        // Handle movement
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
         Move();
     }
 
     void Move()
     {
         float moveDirection = Input.GetAxis("Horizontal");
-
-        // Only animate if the player can actually move
         bool canMove = MoveSpeed > 0f;
         myAnimator.SetBool("walk", canMove && moveDirection != 0);
-
-        // Apply movement
         myrigidbody.velocity = new Vector3(moveDirection * MoveSpeed, myrigidbody.velocity.y);
 
-        // Flip sprite only if movement is allowed
         if (canMove)
         {
             if (moveDirection > 0.01f)
@@ -93,12 +85,10 @@ public class GameController : MonoBehaviour
         }
     }
 
-    // ----------- CHECKPOINT SYSTEM -----------
     public void SetCheckpoint(Vector3 position, string itemID)
     {
         RespawnPoint = position;
         currentCheckpointItemID = itemID;
-
         if (!collectedItems.Contains(itemID))
             collectedItems.Add(itemID);
     }
@@ -113,7 +103,6 @@ public class GameController : MonoBehaviour
         transform.position = RespawnPoint;
     }
 
-    // ----------- EFFECTS -----------
     public void ApplySlowness(float slowMultiplier, float duration)
     {
         if (!isSlowed)
@@ -131,43 +120,73 @@ public class GameController : MonoBehaviour
         isSlowed = false;
     }
 
+    // ---------- Darkness Effect ----------
+    public void StartDarknessEffect(float duration)
+    {
+        // Stop any existing effect
+        StopDarknessEffect();
+
+        darknessCoroutine = StartCoroutine(DarknessEffect(duration));
+    }
+
+    public void StopDarknessEffect()
+    {
+        if (darknessCoroutine != null)
+        {
+            StopCoroutine(darknessCoroutine);
+            darknessCoroutine = null;
+        }
+
+        if (darknessPanel != null)
+        {
+            SetDarknessAlpha(0f);
+            darknessPanel.gameObject.SetActive(false);
+        }
+    }
+
     public System.Collections.IEnumerator DarknessEffect(float duration)
     {
         if (darknessPanel == null) yield break;
 
-        float elapsed = 0f;
+        darknessPanel.gameObject.SetActive(true);
 
-        // Fade In Quickly
-        while (elapsed < 0.5f)
+        try
         {
-            elapsed += Time.deltaTime;
-            float alpha = Mathf.Lerp(0f, 1f, elapsed / 0.5f);
-            SetDarknessAlpha(alpha);
-            yield return null;
-        }
+            float elapsed = 0f;
 
-        // Stay Dark + Pulse
-        float darkTime = duration - 2f;
-        float timer = 0f;
-        while (timer < darkTime)
+            // Fade In
+            while (elapsed < 0.5f)
+            {
+                elapsed += Time.deltaTime;
+                SetDarknessAlpha(Mathf.Lerp(0f, 1f, elapsed / 0.5f));
+                yield return null;
+            }
+
+            // Stay Dark + Pulse
+            float darkTime = Mathf.Max(0f, duration - 1f);
+            float timer = 0f;
+            while (timer < darkTime)
+            {
+                SetDarknessAlpha(0.9f + Mathf.PingPong(Time.time * 0.1f, 0.1f));
+                timer += Time.deltaTime;
+                yield return null;
+            }
+
+            // Fade Out
+            elapsed = 0f;
+            while (elapsed < 1.5f)
+            {
+                elapsed += Time.deltaTime;
+                SetDarknessAlpha(Mathf.Lerp(1f, 0f, elapsed / 1.5f));
+                yield return null;
+            }
+        }
+        finally
         {
-            float alpha = 0.9f + Mathf.PingPong(Time.time * 0.5f, 0.1f);
-            SetDarknessAlpha(alpha);
-            timer += Time.deltaTime;
-            yield return null;
+            SetDarknessAlpha(0f);
+            darknessPanel.gameObject.SetActive(false);
+            darknessCoroutine = null;
         }
-
-        // Fade Out Slowly
-        elapsed = 0f;
-        while (elapsed < 1.5f)
-        {
-            elapsed += Time.deltaTime;
-            float alpha = Mathf.Lerp(1f, 0f, elapsed / 1.5f);
-            SetDarknessAlpha(alpha);
-            yield return null;
-        }
-
-        SetDarknessAlpha(0f);
     }
 
     private void SetDarknessAlpha(float alpha)
@@ -201,7 +220,7 @@ public class GameController : MonoBehaviour
         }
         else if (other.tag == "Ladder")
         {
-            myrigidbody.velocity = new Vector3(0, 0, 0);
+            myrigidbody.velocity = Vector3.zero;
         }
 
         if (Input.GetAxisRaw("Vertical") == 0 && other.tag == "Ladder")
@@ -218,9 +237,16 @@ public class GameController : MonoBehaviour
             myrigidbody.gravityScale = 1f;
             myAnimator.SetBool("isClimb", false);
             myAnimator.SetBool("down", false);
-
-            // Fix momentum when leaving ladder
             myrigidbody.velocity = new Vector2(myrigidbody.velocity.x, 0f);
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (groundCheck != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
         }
     }
 }

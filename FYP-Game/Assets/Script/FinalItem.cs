@@ -19,12 +19,16 @@ public class FinalItem : MonoBehaviour
     private GameController playerController;  // Reference to player
     private float originalMoveSpeed;          // Store original speed
 
+    private NPCDialogue npcDialogue;
+
     void Start()
     {
         interactionPrompt.SetActive(false);
         inputPanel.SetActive(false);
         feedbackText.text = "";
         feedbackText.color = new Color(feedbackText.color.r, feedbackText.color.g, feedbackText.color.b, 0);
+
+        npcDialogue = FindObjectOfType<NPCDialogue>();
     }
 
     void Update()
@@ -56,6 +60,10 @@ public class FinalItem : MonoBehaviour
             originalMoveSpeed = playerController.MoveSpeed;
             playerController.MoveSpeed = 0f;
         }
+
+        // Show timer if NPCDialogue exists
+        if (npcDialogue != null && npcDialogue.timerText != null)
+            npcDialogue.timerText.gameObject.SetActive(true);
     }
 
     private void CloseInputPanel()
@@ -65,9 +73,7 @@ public class FinalItem : MonoBehaviour
 
         // Restore movement
         if (playerController != null)
-        {
             playerController.MoveSpeed = originalMoveSpeed;
-        }
     }
 
     public void CheckInput()
@@ -75,6 +81,12 @@ public class FinalItem : MonoBehaviour
         if (inputField.text.Trim().ToLower() == secretWord.ToLower())
         {
             CloseInputPanel();
+
+            // Stop NPCDialogue timer
+            if (npcDialogue != null)
+                npcDialogue.CompleteGoodEnding();
+
+            // Load happy ending
             SceneManager.LoadScene(happyEndingScene);
         }
         else
@@ -103,7 +115,6 @@ public class FinalItem : MonoBehaviour
             yield return null;
         }
 
-        // Clear input and reactivate input field
         inputField.text = "";
         inputField.ActivateInputField();
     }

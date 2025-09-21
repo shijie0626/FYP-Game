@@ -1,6 +1,10 @@
 ﻿using System.Collections;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 public class EnemyPatrol : MonoBehaviour
 {
     [Header("Patrol Settings")]
@@ -13,13 +17,32 @@ public class EnemyPatrol : MonoBehaviour
     public float disappearTime = 3f;
     private bool isDisappeared = false;
     private SpriteRenderer spriteRenderer;
-    private Coroutine patrolRoutine;
+
+    private void Awake()
+    {
+        spriteRenderer = GetComponent<SpriteRenderer>();
+
+        // Ensure Rigidbody2D is kinematic to allow Transform movement
+        Rigidbody2D rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+            rb.isKinematic = true;
+    }
 
     void Start()
     {
+        // Safety check: assign patrol points
+        if (pointA == null || pointB == null)
+        {
+            Debug.LogError(name + ": Patrol points not assigned!");
+            enabled = false;
+            return;
+        }
+
+        // Start at pointA
+        transform.position = pointA.position;
         targetPoint = pointB;
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        patrolRoutine = StartCoroutine(Patrol());
+
+        StartCoroutine(Patrol());
     }
 
     IEnumerator Patrol()
@@ -28,47 +51,43 @@ public class EnemyPatrol : MonoBehaviour
         {
             if (!isDisappeared)
             {
-                transform.position = Vector2.MoveTowards(
-                    transform.position,
-                    targetPoint.position,
-                    speed * Time.deltaTime
-                );
+                // Move toward target point
+                Vector2 newPos = Vector2.MoveTowards(transform.position, targetPoint.position, speed * Time.deltaTime);
+                Vector2 direction = (targetPoint.position - transform.position).normalized;
+                transform.position = newPos;
 
-                if (Vector2.Distance(transform.position, targetPoint.position) < 0.1f)
+                // Flip sprite based on horizontal movement
+                if (direction.x > 0.01f)
+                    transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+                else if (direction.x < -0.01f)
+                    transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+
+                // Switch patrol target based on horizontal distance
+                if (Mathf.Abs(transform.position.x - targetPoint.position.x) < 0.05f)
                 {
                     targetPoint = (targetPoint == pointA) ? pointB : pointA;
                 }
             }
+
             yield return null;
         }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // ✅ Ignore fake presence beacon
         if (other.GetComponent<PresenceBeacon>() != null) return;
-
         if (!other.CompareTag("Player")) return;
 
-        // ✅ Check if player is hidden
         PlayerToggleWithBeacon toggle = other.GetComponentInParent<PlayerToggleWithBeacon>();
-        if (toggle != null && !toggle.IsPlayerActive())
-        {
-            return; // ignore hidden player
-        }
+        if (toggle != null && !toggle.IsPlayerActive()) return;
 
-        // ✅ Apply effects on real player
         GameController player = other.GetComponent<GameController>();
         if (player != null)
         {
-            // Apply slowness (50% speed for 2s)
             player.ApplySlowness(0.5f, 2f);
-
-            // Start darkness effect (5s total)
             player.StartCoroutine(player.DarknessEffect(5f));
         }
 
-        // Enemy vanish & reappear
         StartCoroutine(DisappearAndReappear());
     }
 
@@ -105,5 +124,29 @@ public class EnemyPatrol : MonoBehaviour
 
         c.a = endAlpha;
         spriteRenderer.color = c;
+    }
+
+    // -----------------------------
+    // Gizmos for patrol points
+    // -----------------------------
+    private void OnDrawGizmos()
+    {
+        if (pointA != null && pointB != null)
+        {
+            // Draw spheres at patrol points
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(pointA.position, 0.1f);
+            Gizmos.DrawSphere(pointB.position, 0.1f);
+
+            // Draw line connecting points
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(pointA.position, pointB.position);
+
+#if UNITY_EDITOR
+            // Draw labels above points
+            Handles.Label(pointA.position + Vector3.up * 0.2f, "Point A");
+            Handles.Label(pointB.position + Vector3.up * 0.2f, "Point B");
+#endif
+        }
     }
 }

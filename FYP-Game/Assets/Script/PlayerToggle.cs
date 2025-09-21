@@ -21,6 +21,9 @@ public class PlayerToggleWithBeacon : MonoBehaviour
     {
         if (playerObject == null) return;
 
+        // Stop darkness effect to avoid it being stuck
+        GameController.Instance?.StopDarknessEffect();
+
         if (presenceBeacon != null)
         {
             presenceBeacon.transform.position = playerObject.transform.position;
@@ -48,17 +51,16 @@ public class PlayerToggleWithBeacon : MonoBehaviour
         if (presenceBeacon != null)
         {
             var beaconComp = presenceBeacon.GetComponent<PresenceBeacon>();
-            if (beaconComp != null) beaconComp.follow = false;
-            StartCoroutine(DisableBeaconNextFrame());
+            if (beaconComp != null)
+            {
+                beaconComp.follow = false;
+                beaconComp.followTarget = null;
+            }
+
+            presenceBeacon.SetActive(false);
         }
 
         isActive = true;
-    }
-
-    IEnumerator DisableBeaconNextFrame()
-    {
-        yield return null;
-        if (presenceBeacon != null) presenceBeacon.SetActive(false);
     }
 
     public bool IsPlayerActive()

@@ -6,7 +6,7 @@ using System.Collections;
 public class HidingSpotTMP : MonoBehaviour
 {
     [Header("Input")]
-    public KeyCode hideKey = KeyCode.E;
+    public KeyCode hideKey = KeyCode.Space;
     public float toggleCooldown = 0.5f; // time between hide/unhide swaps
 
     [Header("References")]
@@ -16,6 +16,11 @@ public class HidingSpotTMP : MonoBehaviour
 
     [Header("Fade Settings")]
     public float fadeDuration = 0.3f;
+
+    [Header("Sprite Settings")]
+    public SpriteRenderer spotRenderer;       // SpriteRenderer of this hiding spot
+    public Sprite defaultSprite;              // Sprite when spot is empty
+    public Sprite hiddenWithPlayerSprite;     // Sprite when player hides inside
 
     private bool playerInside = false;
     private bool playerHidingHere = false;
@@ -32,6 +37,10 @@ public class HidingSpotTMP : MonoBehaviour
 
         if (promptText != null)
             SetTextAlpha(0f); // start hidden
+
+        // Ensure sprite starts as default
+        if (spotRenderer != null && defaultSprite != null)
+            spotRenderer.sprite = defaultSprite;
     }
 
     void Update()
@@ -46,6 +55,7 @@ public class HidingSpotTMP : MonoBehaviour
                 playerToggle.HidePlayer();
                 playerHidingHere = true;
                 FadeOutPrompt();
+                SetSpotSprite(hiddenWithPlayerSprite); // swap sprite
                 StartCoroutine(StartCooldown());
             }
         }
@@ -58,6 +68,7 @@ public class HidingSpotTMP : MonoBehaviour
                 playerHidingHere = false;
 
                 if (playerInside) FadeInPrompt();
+                SetSpotSprite(defaultSprite); // revert sprite
                 StartCoroutine(StartCooldown());
             }
         }
@@ -124,5 +135,11 @@ public class HidingSpotTMP : MonoBehaviour
         Color c = promptText.color;
         c.a = a;
         promptText.color = c;
+    }
+
+    private void SetSpotSprite(Sprite newSprite)
+    {
+        if (spotRenderer != null && newSprite != null)
+            spotRenderer.sprite = newSprite;
     }
 }

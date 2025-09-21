@@ -28,7 +28,7 @@ public class EnemyAIWithFade : MonoBehaviour
     public Transform spawnPoint;
 
     [Header("Player Active Reference")]
-    public PlayerToggleWithBeacon playerToggle; // 用来检测玩家是否处于躲藏状态
+    public PlayerToggleWithBeacon playerToggle; // 检测玩家是否处于躲藏状态
 
     [Header("Ghost Kill Settings")]
     public VideoClip killVideoClip; // 🎥 assign different clip for each ghost
@@ -38,7 +38,6 @@ public class EnemyAIWithFade : MonoBehaviour
     private bool chasingPlayer = false;
     private bool isGrounded;
     private Coroutine fadeRoutine;
-    private float waitTimer = 0f;
     private int moveDirection = 1;
 
     private void Awake()
@@ -93,10 +92,11 @@ public class EnemyAIWithFade : MonoBehaviour
         if (distanceToPlayer > stopRange)
         {
             moveDirection = player.position.x > transform.position.x ? 1 : -1;
-            Vector2 newPos = rb.position + new Vector2(moveDirection * moveSpeed * Time.deltaTime, 0);
-            rb.MovePosition(newPos);
 
+            // Flip sprite
             transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * moveDirection, transform.localScale.y, 1);
+
+            // Move with velocity only
             rb.velocity = new Vector2(moveDirection * moveSpeed, rb.velocity.y);
         }
         else
@@ -109,27 +109,19 @@ public class EnemyAIWithFade : MonoBehaviour
 
     private void Patrol()
     {
-        // move horizontally
-        Vector2 newPos = rb.position + new Vector2(moveDirection * moveSpeed * Time.deltaTime, 0);
-        rb.MovePosition(newPos);
-
-        // flip sprite to face direction
+        // Flip sprite
         transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * moveDirection, transform.localScale.y, 1);
 
         // 🔹 Clamp patrol within [pointA.x, pointB.x]
         if (pointA != null && pointB != null)
         {
             if (rb.position.x <= Mathf.Min(pointA.position.x, pointB.position.x))
-            {
-                moveDirection = 1; // force move right
-            }
+                moveDirection = 1;
             else if (rb.position.x >= Mathf.Max(pointA.position.x, pointB.position.x))
-            {
-                moveDirection = -1; // force move left
-            }
+                moveDirection = -1;
         }
 
-        // keep velocity consistent with movement
+        // Move with velocity only
         rb.velocity = new Vector2(moveDirection * moveSpeed, rb.velocity.y);
 
         // fade out when patrolling
@@ -175,6 +167,8 @@ public class EnemyAIWithFade : MonoBehaviour
             {
                 if (GameOverManager.Instance != null)
                 {
+                    // Freeze time immediately when ghost catches player
+                    Time.timeScale = 0f;
                     GameOverManager.Instance.KillPlayer(killVideoClip);
                 }
             }

@@ -27,9 +27,7 @@ public class Health : MonoBehaviour
     {
         if (currentHealth <= 0)
         {
-            GameOverPanel.SetActive(true);
-            Time.timeScale = 0;
-
+         
         }
     }
 
